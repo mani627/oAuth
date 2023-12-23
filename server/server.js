@@ -9,9 +9,9 @@ const app = express();
 
 app.use(
 	cookieSession({
-		name: "session",
-		keys: ["cyberwolve"],
-		maxAge: 24 * 60 * 60 * 100,
+		name: "session_oauth",
+		keys: [process.env.SESSION],
+		maxAge:  24*60*60* 1000,
 	})
 );
 
