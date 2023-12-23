@@ -7,43 +7,43 @@ import Signup from "./pages/Signup";
 import "./App.css";
 
 function App() {
-	const [user, setUser] = useState(null);
+  const [user, setUser] = useState(null);
 
-	const getUser = async () => {
-		try {
-			
-			const url = `${process.env.REACT_APP_API_URL}/auth/login/success`;
-			const { data } = await axios.get(url, { withCredentials: true });
-			setUser(data.user._json);
-		} catch (err) {
-			console.log(err);
-		}
-	};
+  const getUser = async () => {
+    try {
+      const url = `${process.env.REACT_APP_API_URL}/auth/login/success`;
+      const { data } = await axios.get(url, { withCredentials: true });
+      data.user._json.gitemail = data?.user?.emails?.[0]?.value;
+      setUser(data.user._json);
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
-	useEffect(() => {
-		getUser();
-	}, []);
+  useEffect(() => {
+    getUser();
+  }, []);
 
-	return (
-		<div className="container">
-			<Routes>
-				<Route
-					exact
-					path="/"
-					element={user ? <Home user={user} /> : <Navigate to="/login" />}
-				/>
-				<Route
-					exact
-					path="/login"
-					element={user ? <Navigate to="/" /> : <Login />}
-				/>
-				<Route
-					path="/signup"
-					element={user ? <Navigate to="/" /> : <Signup />}
-				/>
-			</Routes>
-		</div>
-	);
+  return (
+    <div className="container">
+      <Routes>
+        <Route
+          exact
+          path="/"
+          element={user ? <Home user={user} /> : <Navigate to="/login" />}
+        />
+        <Route
+          exact
+          path="/login"
+          element={user ? <Navigate to="/" /> : <Login />}
+        />
+        <Route
+          path="/signup"
+          element={user ? <Navigate to="/" /> : <Signup />}
+        />
+      </Routes>
+    </div>
+  );
 }
 
 export default App;

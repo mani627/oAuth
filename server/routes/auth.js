@@ -1,8 +1,9 @@
 const router = require("express").Router();
 const passport = require("passport");
 
-router.get("/login/success", (req, res) => {
 
+// success
+router.get("/login/success", (req, res) => {
 	if (req.user) {
 		res.status(200).json({
 			error: false,
@@ -14,6 +15,8 @@ router.get("/login/success", (req, res) => {
 	}
 });
 
+
+// failed
 router.get("/login/failed", (req, res) => {
 	res.status(401).json({
 		error: true,
@@ -21,8 +24,9 @@ router.get("/login/failed", (req, res) => {
 	});
 });
 
-router.get("/google", passport.authenticate("google", ["profile", "email"]));
 
+// google
+router.get("/google", passport.authenticate("google", ["profile", "email"]));
 router.get(
 	"/google/callback",
 	passport.authenticate("google", {
@@ -31,6 +35,30 @@ router.get(
 	})
 );
 
+
+// fb
+router.get('/fb',
+  passport.authenticate('facebook'));
+  router.get(
+	"/fb/callback",
+	passport.authenticate('facebook', {
+		successRedirect: process.env.CLIENT_URL,
+		failureRedirect: "/login/failed",
+	})
+);
+
+// git
+router.get('/github',
+  passport.authenticate('github',{ scope: [ 'user:email' ] }));
+  router.get(
+	"/github/callback",
+	passport.authenticate('github', {
+		successRedirect: process.env.CLIENT_URL,
+		failureRedirect: "/login/failed",
+	})
+);
+
+// logout
 router.get("/logout", (req, res) => {
 	req.logout();
 	res.redirect(process.env.CLIENT_URL);

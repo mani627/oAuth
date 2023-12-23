@@ -3,7 +3,7 @@ const mongoose= require("../config/index")
 
 // Create a User schema and model
 const userSchema = new mongoose.Schema({
-    googleId: String,
+    id: String,
     image: String,
     userEmail: String,
     userName: String,
