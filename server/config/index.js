@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-
+const nodemailer = require("nodemailer");
 
 // Connect to MongoDB (replace 'your_database_url' with your actual MongoDB connection string)
 mongoose.connect(process.env.MONGO_CON);
@@ -13,4 +13,13 @@ db.once("open", () => {
   console.log("Connected to MongoDB");
 });
 
-module.exports= mongoose
+
+const sender = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: "mani8754209@gmail.com",
+    pass: process.env.NODEMAILER_GMAIL_PASS,
+  },
+});
+
+module.exports= {mongoose,sender}

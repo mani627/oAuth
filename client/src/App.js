@@ -5,6 +5,9 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import "./App.css";
+import ErrorBoundary from "./Error";
+import ForgetPassword from "./pages/ForgetPassword";
+import Otp from "./pages/Otp";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -13,6 +16,7 @@ function App() {
     try {
       const url = `${process.env.REACT_APP_API_URL}/auth/login/success`;
       const { data } = await axios.get(url, { withCredentials: true });
+     
       data.user._json.gitemail = data?.user?.emails?.[0]?.value;
       setUser(data.user._json);
     } catch (err) {
@@ -25,6 +29,7 @@ function App() {
   }, []);
 
   return (
+    <ErrorBoundary>
     <div className="container">
       <Routes>
         <Route
@@ -37,12 +42,23 @@ function App() {
           path="/login"
           element={user ? <Navigate to="/" /> : <Login />}
         />
+         <Route
+          exact
+          path="/forgotpassword"
+          element={ <ForgetPassword />}
+        />
+          <Route
+          exact
+          path="/otp"
+          element={ <Otp />}
+        />
         <Route
           path="/signup"
           element={user ? <Navigate to="/" /> : <Signup />}
         />
       </Routes>
     </div>
+    </ErrorBoundary>
   );
 }
 

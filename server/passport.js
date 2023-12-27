@@ -14,20 +14,25 @@ passport.use(
       profileFields: ["id", "displayName", "photos", "email"],
     },
     async function (accessToken, refreshToken, profile, cb) {
-      // Check if the user already exists in the database
-      const existingUser = await User.findOne({ id: profile.id });
-      if (existingUser) {
-        return cb(null, profile);
+      try {
+        // Check if the user already exists in the database
+        const existingUser = await User.findOne({ id: profile.id });
+        if (existingUser) {
+          return cb(null, profile);
+        }
+
+        // Create a new user and save it to the database
+        const newUser = new User({
+          id: profile.id,
+          image: profile.photos[0]?.value,
+          userEmail: profile?.emails?.[0]?.value,
+          userName: profile.displayName,
+        });
+        await newUser.save();
+      } catch (er) {
+        next(new Error(er));
       }
 
-      // Create a new user and save it to the database
-      const newUser = new User({
-        id: profile.id,
-        image: profile.photos[0]?.value,
-        userEmail: profile?.emails?.[0]?.value,
-        userName: profile.displayName,
-      });
-      await newUser.save();
       cb(null, profile);
     }
   )
@@ -43,21 +48,26 @@ passport.use(
       scope: ["user:email"],
     },
     async function (accessToken, refreshToken, profile, done) {
-      // Check if the user already exists in the database
-      const existingUser = await User.findOne({ id: profile.id });
-      if (existingUser) {
-        return done(null, profile);
+      try {
+        // Check if the user already exists in the database
+        const existingUser = await User.findOne({ id: profile.id });
+        if (existingUser) {
+          return done(null, profile);
+        }
+
+        // Create a new user and save it to the database
+        const newUser = new User({
+          id: profile.id,
+          image: profile.photos[0].value,
+          userEmail: profile.emails[0].value,
+          userName: profile.username,
+        });
+
+        await newUser.save();
+      } catch (er) {
+        next(new Error(er));
       }
 
-      // Create a new user and save it to the database
-      const newUser = new User({
-        id: profile.id,
-        image: profile.photos[0].value,
-        userEmail: profile.emails[0].value,
-        userName: profile.username,
-      });
-
-      await newUser.save();
       return done(null, profile);
     }
   )
@@ -72,20 +82,24 @@ passport.use(
       scope: ["profile", "email"],
     },
     async function (accessToken, refreshToken, profile, callback) {
-      // Check if the user already exists in the database
-      const existingUser = await User.findOne({ id: profile.id });
-      if (existingUser) {
-        return callback(null, profile);
+      try{  // Check if the user already exists in the database
+        const existingUser = await User.findOne({ id: profile.id });
+        if (existingUser) {
+          return callback(null, profile);
+        }
+  
+        // Create a new user and save it to the database
+        const newUser = new User({
+          id: profile.id,
+          image: profile.photos[0]?.value,
+          userEmail: profile.emails[0]?.value,
+          userName: profile.displayName,
+        });
+        await newUser.save();}
+      catch(er){
+        next(new Error(er))
       }
-
-      // Create a new user and save it to the database
-      const newUser = new User({
-        id: profile.id,
-        image: profile.photos[0]?.value,
-        userEmail: profile.emails[0]?.value,
-        userName: profile.displayName,
-      });
-      await newUser.save();
+    
       return callback(null, profile);
     }
   )
