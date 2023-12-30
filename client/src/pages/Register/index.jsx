@@ -3,7 +3,7 @@ import styles from "./styles.module.css";
 import { useState } from "react";
 import { Axios } from "../../service/axios";
 
-function Login({ getUser }) {
+function Register() {
   const navigate = useNavigate();
   const [clickLimitation, seClickLimitation] = useState({
     count: 0,
@@ -12,39 +12,20 @@ function Login({ getUser }) {
   });
 
   const [inputDatas, setInputDatas] = useState({
+    username: "",
     email: "",
     password: "",
     isVisible: true,
+    isVisibleCnfrm: true,
   });
-  const googleAuth = () => {
-    window.open(
-      `${process.env.REACT_APP_API_URL}/auth/google/callback`,
-      "_self"
-    );
-  };
 
-  const fbAuth = () => {
-    window.open(`${process.env.REACT_APP_API_URL}/auth/fb/callback`, "_self");
-  };
-
-  const githubAuth = () => {
-    window.open(
-      `${process.env.REACT_APP_API_URL}/auth/github/callback`,
-      "_self"
-    );
-  };
-
-  const showPass = () => {
+  const showPass = (type = null) => {
+    console.log(type);
     setInputDatas((prev) => ({
       ...prev,
-      isVisible: !prev.isVisible,
-    }));
-  };
-
-  const onInputChange = (e) => {
-    setInputDatas((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
+      isVisible: type === null ? !prev.isVisible : prev.isVisible,
+      isVisibleCnfrm:
+        type !== null ? !prev.isVisibleCnfrm : prev.isVisibleCnfrm,
     }));
   };
 
@@ -75,8 +56,7 @@ function Login({ getUser }) {
     }, 1000);
   };
 
-  const logIn = async () => {
-    console.log("jnjbn");
+  const register = async () => {
     seClickLimitation((prev) => {
       if (prev.count === 3) {
         countDown();
@@ -86,52 +66,91 @@ function Login({ getUser }) {
         count: prev.count + 1,
       };
     });
-
-    let result = await Axios(
-      "/userAuth/signin",
-      {
-        email: inputDatas.email,
-        password: inputDatas.password,
-      },
-      null,
-      null
-    );
-
-    if (result?.data?.message === "Successfully LoggedIn") {
-      let expireDate = new Date().getTime() + 24 * 60 * 60 * 1000;
-      result.data.expire = expireDate;
-      localStorage.setItem("userDetails", JSON.stringify(result.data));
-      getUser();
-    } else if (result?.response?.data.error) {
-      alert(result?.response?.data.message);
+    console.log(document.getElementById("cnfrm_pass").value);
+    if (inputDatas.password === document.getElementById("cnfrm_pass").value) {
+      let result = await Axios(
+        "/userAuth/signup",
+        {
+          email: inputDatas.email,
+          password: inputDatas.password,
+          username: inputDatas.username,
+        },
+        null,
+        null
+      );
+      if (result?.data?.message === "User Created") {
+        alert("created!!!");
+        navigate("/login");
+      } else if (result?.response?.data.error) {
+        alert(result?.response?.data.message);
+      }
+      console.log(result);
+    } else {
+      alert("Passwords Must Be same");
     }
   };
-  console.log(inputDatas);
+
+  const onInputChange = (e) => {
+    setInputDatas((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.form_container}>
         <div className={styles.right}>
-          <h2 className={styles.from_heading}> Log in</h2>
+          <h2 className={styles.from_heading}>Register</h2>
 
           <input
-            onChange={onInputChange}
             type="text"
+            onChange={onInputChange}
             className={styles.input}
-            placeholder="Email"
+            name="username"
+            placeholder="UserName"
+          />
+          <input
+            type="text"
+            onChange={onInputChange}
+            className={styles.input}
             name="email"
+            placeholder="Email"
           />
           <div style={{ position: "relative" }}>
             <input
-              onChange={onInputChange}
-              name="password"
               type={!inputDatas.isVisible ? "text" : "password"}
               className={styles.input}
               placeholder="Password"
+              name="password"
+              onChange={onInputChange}
             />
             <img
-              onClick={showPass}
+              onClick={() => showPass()}
               src={`./images/${
                 inputDatas.isVisible ? "closed-eye" : "eye"
+              }.png`}
+              style={{
+                height: "25px",
+                width: "25px",
+                cursor: "pointer",
+                position: "absolute",
+                right: "6px",
+                top: "25%",
+              }}
+            />
+          </div>
+          <div style={{ position: "relative" }}>
+            <input
+              id="cnfrm_pass"
+              type={!inputDatas.isVisibleCnfrm ? "text" : "password"}
+              className={styles.input}
+              placeholder="Confirm Password"
+            />
+            <img
+              onClick={() => showPass("cnfrm")}
+              src={`./images/${
+                inputDatas.isVisibleCnfrm ? "closed-eye" : "eye"
               }.png`}
               style={{
                 height: "25px",
@@ -148,35 +167,11 @@ function Login({ getUser }) {
             className={styles.btn}
             disabled={clickLimitation.count === 4 ? true : false}
             style={{ cursor: clickLimitation.count === 4 ? "wait" : "pointer" }}
-            onClick={logIn}
+            onClick={register}
           >
-            Log In
+            Register
           </button>
-          <p className={styles.text}>or</p>
 
-          <div
-            style={{
-              display: "flex",
-              width: "100%",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <button className={styles.google_btn} onClick={googleAuth}>
-              <img src="./images/google.png" alt="google icon" />
-              <span>Sing in with Google</span>
-            </button>
-
-            {/* <button className={styles.google_btn} onClick={fbAuth}>
-              <span>Sing in with FB</span>
-            </button> */}
-
-            <span style={{ flex: 0.1 }}></span>
-            <button className={styles.google_btn} onClick={githubAuth}>
-              <img src="./images/git.png" alt="google icon" />
-              <span>Sing in with GitHub</span>
-            </button>
-          </div>
           <br />
           {clickLimitation.count === 4 ? (
             <span>
@@ -187,11 +182,10 @@ function Login({ getUser }) {
           ) : null}
           <br />
           <Link to="/forgotpassword">Forget Password?</Link>
-          <Link to="/register">Register</Link>
         </div>
       </div>
     </div>
   );
 }
 
-export default Login;
+export default Register;

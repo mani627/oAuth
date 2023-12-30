@@ -1,10 +1,38 @@
+import { useEffect } from "react";
 import styles from "./styles.module.css";
+import { useNavigate } from "react-router-dom";
 
 function Home(userDetails) {
-  const user = userDetails.user;
+  const navigate = useNavigate();
+
+  let currentTime = new Date();
+
+  let user = {};
+  // useEffect(() => {
+  // if (userDetails?.user) {
+  user = userDetails.user;
+  // } else {
+  //   let storedData = JSON.parse(localStorage.getItem("userDetails"));
+  //   if (currentTime > storedData?.expire) {
+  //     localStorage.clear();
+  //     navigate("/login");
+  //   } else {
+  //     console.log(storedData);
+  //     user.name = storedData?.details[1];
+  //     user.avatar_url = "https://gravatar.com/avatar/HASH ";
+  //     user.email = storedData?.details[0];
+  //   }
+  // }
+  // }, []);
 
   const logout = () => {
-    window.open(`${process.env.REACT_APP_API_URL}/auth/logout`, "_self");
+    let storedData = JSON.parse(localStorage.getItem("userDetails"));
+    if (!storedData) {
+      window.open(`${process.env.REACT_APP_API_URL}/auth/logout`, "_self");
+    } else {
+      localStorage.clear();
+      userDetails.getUser("logout");
+    }
   };
   let image_src = user.avatar_url
     ? user.avatar_url

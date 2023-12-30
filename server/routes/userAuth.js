@@ -2,27 +2,143 @@ const router = require("express").Router();
 const nodeMailer_config = require("../config");
 const bcrypt = require("bcryptjs");
 const User = require("../models/userModels");
+const { v4: uuidv4 } = require("uuid");
+const jwt = require("jsonwebtoken");
 
 const { sender } = nodeMailer_config;
 
 let emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const passwordRegex = /[^a-z0-9A-Z]/;
 
 // signin
-router.post("/signin", async (req, res) => {
-  let pass = await bcrypt.hash(req.body.password, 8);
-  res.send(pass);
+router.post("/signin", async (req, res, next) => {
+  try {
+    if (req.body.email || req.body.password) {
+      //  email validation
+      if (!emailRegex.test(req.body.email)) {
+        res.status(400).json({ error: true, message: "Email Input Not valid" });
+      }
+      //pass validation
+      else if (
+        !(req.body.password.length >= 4 && req.body.password.length <= 8)
+      ) {
+        res.status(400).json({
+          error: true,
+          message: "Minimun 4 char and Max 8 char",
+        });
+      } else if (!passwordRegex.test(req.body.password)) {
+        res.status(400).json({
+          error: true,
+          message: "Must have numeric and alpha character",
+        });
+      } else {
+        let existUser = await User.findOne({ userEmail: req.body.email });
+
+        if (!existUser) {
+          res.status(400).json({ error: true, message: "User not Exist" });
+        } else {
+          bcrypt.compare(
+            req.body.password,
+            existUser.passWord,
+            (er, result) => {
+              console.log(er, "oooo", result);
+              if (er) {
+                res.status(500).json({ error: true, message: er });
+              } else {
+                if (!result) {
+                  res
+                    .status(400)
+                    .json({ error: true, message: "Password Mismatch" });
+                } else {
+                  let email = existUser.userEmail;
+                  const token = jwt.sign(
+                    { id: email },
+                    process.env.JWT_SECRET,
+                    {
+                      expiresIn: process.env.JWT_EXPIRES_IN,
+                    }
+                  );
+                  res.cookie("customCookie", "example_value", {
+                    maxAge: 3600000,
+                  });
+                  res.status(200).json({
+                    error: true,
+                    message: "Successfully LoggedIn",
+                    token: token,
+                    details: [existUser.userEmail, existUser.userName],
+                  });
+                }
+              }
+            }
+          );
+        }
+      }
+    } else {
+      res.status(400).json({ error: true, message: "Required User's Details" });
+    }
+  } catch (er) {
+    next(new Error(er));
+  }
 });
 
 //signup
-router.post("/signup", (req, res, next) => {
-  if (req.user) {
-    res.status(200).json({
-      error: false,
-      message: "Successfully Loged In",
-      user: req.user,
-    });
-  } else {
-    res.status(403).json({ error: true, message: "Not Authorized" });
+router.post("/signup", async (req, res, next) => {
+  try {
+    if (req.body.email || req.body.password || req.body.username) {
+      //  email validation
+      if (!emailRegex.test(req.body.email)) {
+        res.status(400).json({ error: true, message: "Email Input Not valid" });
+      }
+      // pass validation
+      else if (
+        !(req.body.password.length >= 4 && req.body.password.length <= 8)
+      ) {
+        res.status(400).json({
+          error: true,
+          message: "Minimun 4 char and Max 8 char",
+        });
+      } else if (!passwordRegex.test(req.body.password)) {
+        res.status(400).json({
+          error: true,
+          message: "Must have numeric and alpha character",
+        });
+      } else if (
+        !(req.body.username.length >= 5 && req.body.username.length <= 15)
+      ) {
+        res.status(400).json({
+          error: true,
+          message: "Must have min 5 and max 15",
+        });
+      } else {
+        let existUser = await User.findOne({ userEmail: req.body.email });
+
+        // find exist user
+        if (existUser) {
+          res.status(400).json({ error: true, message: "Email Already Exist" });
+        } else {
+          // hash password
+          let pass = await bcrypt.hash(req.body.password, 8);
+          // Example: Generate a random ID using uuid
+          const randomId = uuidv4();
+          // Create a new user and save it to the database
+          const newUser = new User({
+            id: randomId,
+            image: "",
+            userEmail: req.body.email,
+            userName: req.body.username,
+            passWord: pass,
+          });
+
+          await newUser.save();
+
+          res.status(200).json({ error: false, message: "User Created" });
+        }
+      }
+    } else {
+      res.status(400).json({ error: true, message: "Required User's Details" });
+    }
+  } catch (e) {
+    next(new Error(e));
   }
 });
 
@@ -78,11 +194,9 @@ router.post("/forgotPassword", async (req, res, next) => {
 //changepassword
 router.post("/changepassword", async (req, res, next) => {
   try {
-    const passwordRegex =
-      /^(?=.*\d)(?=.*[!@#$%^&*()-_+=])[0-9a-zA-Z!@#$%^&*()-_+=]{8,}$/;
     if (req.body.password) {
       //email validation
-      if (req.body.password >= 4 && req.body.password <= 8) {
+      if (!(req.body.password.length >= 4 && req.body.password.length <= 8)) {
         res.status(400).json({
           error: true,
           message: "Minimun 4 char and Max 8 char",
@@ -90,7 +204,7 @@ router.post("/changepassword", async (req, res, next) => {
       } else if (!passwordRegex.test(req.body.password)) {
         res.status(400).json({
           error: true,
-          message: "Must have numeric and special character",
+          message: "Must have numeric and alpha character",
         });
       } else {
         let pass = await bcrypt.hash(req.body.password, 8);

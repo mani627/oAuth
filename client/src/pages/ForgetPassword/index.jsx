@@ -39,11 +39,7 @@ function ForgetPassword() {
       });
     }, 1000);
   };
-  console.log(
-    clickLimitation.seconds,
-    clickLimitation.minutes,
-    clickLimitation.count
-  );
+
   const logIn = async () => {
     document.getElementById("button_disable").disabled = true;
     seClickLimitation((prev) => {
@@ -66,7 +62,9 @@ function ForgetPassword() {
     if (result?.response?.data.error) {
       alert(result.response.data.message);
     } else {
-      navigate("/otp",{state:{ otp: result?.data?.message,email:inputRef.current.value }} );
+      navigate("/otp", {
+        state: { otp: result?.data?.message, email: inputRef.current.value },
+      });
     }
   };
 

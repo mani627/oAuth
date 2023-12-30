@@ -7,7 +7,7 @@ import { useLocation } from "react-router-dom";
 function Otp() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { otp, email } = location?.state;
+  const { otp, email } = location?.state || {};
 
   const [clickLimitation, seClickLimitation] = useState({
     count: 0,
@@ -87,7 +87,7 @@ function Otp() {
       alert("OTP Mismatch");
     }
   };
-  
+
   if (!otp) {
     navigate("/forgotpassword");
     return null;
