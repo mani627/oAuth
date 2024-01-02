@@ -5,10 +5,11 @@ const User = require("../models/userModels");
 const { v4: uuidv4 } = require("uuid");
 const jwt = require("jsonwebtoken");
 
+const createHMAC = require("../utility");
 const { sender } = nodeMailer_config;
 
 let emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const passwordRegex = /[^a-z0-9A-Z]/;
+const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d).+$/;
 
 // signin
 router.post("/signin", async (req, res, next) => {
@@ -24,7 +25,7 @@ router.post("/signin", async (req, res, next) => {
       ) {
         res.status(400).json({
           error: true,
-          message: "Minimun 4 char and Max 8 char",
+          message: "Pass must Mini 4 char and Max 8 char",
         });
       } else if (!passwordRegex.test(req.body.password)) {
         res.status(400).json({
@@ -37,19 +38,37 @@ router.post("/signin", async (req, res, next) => {
         if (!existUser) {
           res.status(400).json({ error: true, message: "User not Exist" });
         } else {
+        
+          let result = await User.updateOne(
+            { userEmail: req.body.email },
+            {
+              $set: {
+                image: "",
+              },
+            }
+          );
+
           bcrypt.compare(
             req.body.password,
             existUser.passWord,
             (er, result) => {
-              console.log(er, "oooo", result);
               if (er) {
-                res.status(500).json({ error: true, message: er });
+                if (er.message === "Illegal arguments: string, undefined") {
+                  // login with email which already logged by outh
+                  res.status(500).json({
+                    error: true,
+                    message: "Register with provided email",
+                  });
+                }
               } else {
                 if (!result) {
                   res
                     .status(400)
                     .json({ error: true, message: "Password Mismatch" });
                 } else {
+                  let expireDate =
+                    new Date().getTime() + Number(process.env.JWT_EXPIRES_IN);
+
                   let email = existUser.userEmail;
                   const token = jwt.sign(
                     { id: email },
@@ -62,10 +81,11 @@ router.post("/signin", async (req, res, next) => {
                     maxAge: 3600000,
                   });
                   res.status(200).json({
-                    error: true,
+                    error: false,
                     message: "Successfully LoggedIn",
                     token: token,
                     details: [existUser.userEmail, existUser.userName],
+                    expireDate: expireDate,
                   });
                 }
               }
@@ -107,32 +127,85 @@ router.post("/signup", async (req, res, next) => {
       ) {
         res.status(400).json({
           error: true,
-          message: "Must have min 5 and max 15",
+          message: "Must username have min 5 and max 15",
         });
       } else {
         let existUser = await User.findOne({ userEmail: req.body.email });
 
         // find exist user
-        if (existUser) {
+        if (existUser && existUser.passWord) {
           res.status(400).json({ error: true, message: "Email Already Exist" });
         } else {
-          // hash password
-          let pass = await bcrypt.hash(req.body.password, 8);
-          // Example: Generate a random ID using uuid
-          const randomId = uuidv4();
-          // Create a new user and save it to the database
-          const newUser = new User({
-            id: randomId,
-            image: "",
-            userEmail: req.body.email,
-            userName: req.body.username,
-            passWord: pass,
+          // send OTP
+
+          let random_otp = Math.floor(Math.random() * (2000 - 1000 + 1)) + 1000;
+          const composemail = {
+            from: "mani8754209@gmail.com",
+            to: `${req.body.email}`,
+            subject: "ForgotPassword OTP",
+            html: `<pre>
+   Hi,
+ 
+   Your OTP is ${random_otp} to Signup.
+ 
+   Thanks By,
+   Mani.R
+   </pre>`,
+          };
+          sender.sendMail(composemail, async function (erroremail, info) {
+            if (erroremail) {
+              next(new Error(erroremail));
+            } else {
+              // hash password and register
+              let pass = await bcrypt.hash(req.body.password, 8);
+              // Example: Generate a random ID using uuid
+              const randomId = uuidv4();
+              let user = {
+                id: randomId,
+                image: "",
+                userEmail: req.body.email,
+                userName: req.body.username,
+                passWord: pass,
+              };
+
+              res.status(200).json({
+                error: false,
+                message: createHMAC(random_otp),
+                optional: user,
+              });
+            }
           });
-
-          await newUser.save();
-
-          res.status(200).json({ error: false, message: "User Created" });
         }
+      }
+    }
+
+    // Register By OTP
+    else if (req.body.type === "RegisterByOtp") {
+      let existUser = await User.findOne({ userEmail: req.body.userEmail });
+
+      if (existUser) {
+        let result = await User.updateOne(
+          { userEmail: req.body.userEmail },
+          {
+            $set: {
+              passWord: req.body.passWord,
+              userName: req.body.userName,
+              image: "",
+            },
+          }
+        );
+        res.status(200).json({ error: false, message: "User Created" });
+      } else {
+        const newUser = new User({
+          id: req.body.id,
+          image: "",
+          userEmail: req.body.userEmail,
+          userName: req.body.userName,
+          passWord: req.body.passWord,
+        });
+        await newUser.save();
+
+        res.status(200).json({ error: false, message: "User Created" });
       }
     } else {
       res.status(400).json({ error: true, message: "Required User's Details" });
@@ -165,7 +238,7 @@ router.post("/forgotPassword", async (req, res, next) => {
           to: `${existUser["userEmail"]}`,
           subject: "ForgotPassword OTP",
           html: `<pre>
-          Hi,<b>Abu</b>
+          Hi,
         
           Your OTP is ${random_otp} to Change Password.
         
@@ -173,11 +246,13 @@ router.post("/forgotPassword", async (req, res, next) => {
           Mani.R
           </pre>`,
         };
-        sender.sendMail(composemail, function (erroremail, info) {
+        sender.sendMail(composemail, async function (erroremail, info) {
           if (erroremail) {
             next(new Error(erroremail));
           } else {
-            res.status(200).json({ error: false, message: random_otp });
+            res
+              .status(200)
+              .json({ error: false, message: createHMAC(random_otp) });
           }
         });
       }
@@ -215,7 +290,7 @@ router.post("/changepassword", async (req, res, next) => {
         if (result.modifiedCount) {
           res
             .status(200)
-            .json({ error: true, message: "Changed Successfully" });
+            .json({ error: false, message: "Changed Successfully" });
         }
       }
     } else {

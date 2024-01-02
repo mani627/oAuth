@@ -8,6 +8,8 @@ const cookieSession = require("cookie-session");
 const passportStrategy = require("./passport");
 const bodyparser = require("body-parser");
 const app = express();
+const cron = require('node-cron');
+
 
 // parsing request payloads
 app.use(bodyparser.json());
@@ -15,9 +17,11 @@ app.use(
   cookieSession({
     name: "session_oauth",
     keys: [process.env.SESSION],
-    maxAge: 24 * 60 * 60 * 1000,
+    maxAge: 24*60*60*1000,
   })
 );
+
+
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -29,6 +33,10 @@ app.use(
     credentials: true,
   })
 );
+
+
+
+
 
 app.use("/auth", authRoute);
 app.use("/userAuth", userauthRoute);

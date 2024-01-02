@@ -57,6 +57,7 @@ function Register() {
   };
 
   const register = async () => {
+    document.getElementById("button_disable").disabled = true;
     seClickLimitation((prev) => {
       if (prev.count === 3) {
         countDown();
@@ -66,7 +67,7 @@ function Register() {
         count: prev.count + 1,
       };
     });
-    console.log(document.getElementById("cnfrm_pass").value);
+
     if (inputDatas.password === document.getElementById("cnfrm_pass").value) {
       let result = await Axios(
         "/userAuth/signup",
@@ -78,14 +79,18 @@ function Register() {
         null,
         null
       );
-      if (result?.data?.message === "User Created") {
-        alert("created!!!");
-        navigate("/login");
+      document.getElementById("button_disable").disabled = false;
+      if (result?.data?.optional) {
+        console.log(result.data);
+        navigate("/otp", {
+          state: { optional: result.data.optional, otp: result.data.message },
+        });
       } else if (result?.response?.data.error) {
         alert(result?.response?.data.message);
       }
       console.log(result);
     } else {
+      document.getElementById("button_disable").disabled = false;
       alert("Passwords Must Be same");
     }
   };
@@ -164,6 +169,7 @@ function Register() {
           </div>
 
           <button
+            id="button_disable"
             className={styles.btn}
             disabled={clickLimitation.count === 4 ? true : false}
             style={{ cursor: clickLimitation.count === 4 ? "wait" : "pointer" }}

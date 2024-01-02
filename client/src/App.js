@@ -1,18 +1,16 @@
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
 import axios from "axios";
+import { useEffect, useState } from "react";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import "./App.css";
+import ForgetPassword from "./pages/ForgetPassword";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import "./App.css";
-import ErrorBoundary from "./Error";
-import ForgetPassword from "./pages/ForgetPassword";
 import Otp from "./pages/Otp";
 import Register from "./pages/Register";
 
 function App() {
   const [user, setUser] = useState(null);
-  const navigate = useNavigate();
+ 
 
   const getUser = async (data) => {
     try {
@@ -22,7 +20,8 @@ function App() {
         let currentTime = new Date();
         let storedData = JSON.parse(localStorage.getItem("userDetails"));
         if (storedData) {
-          if (currentTime > storedData?.expire) {
+          if (currentTime > storedData?.expireDate) {
+            localStorage.clear();
             setUser(null);
           } else {
             setUser({
@@ -49,46 +48,51 @@ function App() {
   }, []);
 
   return (
-    <ErrorBoundary>
-      <div className="container">
-        <Routes>
-          <Route
-            exact
-            path="/"
-            element={
-              user ? (
-                <Home user={user} getUser={getUser} />
-              ) : (
-                <Navigate to="/login" />
-              )
-            }
-          />
-          <Route
-            exact
-            path="/login"
-            element={user ? <Navigate to="/" /> : <Login getUser={getUser} />}
-          />
-          <Route
-            exact
-            path="/forgotpassword"
-            element={user ? <Navigate to="/" /> : <ForgetPassword />}
-          />
-          <Route
-            exact
-            path="/otp"
-            element={user ? <Navigate to="/" /> : <Otp />}
-          />
-          <Route
-            path="/signup"
-            element={user ? <Navigate to="/" /> : <Signup />}
-          />
-          <Route
-            path="/register"
-            element={user ? <Navigate to="/" /> : <Register />}
-          />
-        </Routes>
-      </div>
-    </ErrorBoundary>
+    <div className="container">
+      <Routes>
+        <Route
+          exact
+          path="/"
+          element={
+            user ? (
+              <Home user={user} getUser={getUser} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          exact
+          path="/login"
+          element={user ? <Navigate to="/home" /> : <Login getUser={getUser} />}
+        />
+        <Route
+          exact
+          path="/forgotpassword"
+          element={user ? <Navigate to="/" /> : <ForgetPassword />}
+        />
+        <Route
+          exact
+          path="/otp"
+          element={user ? <Navigate to="/" /> : <Otp />}
+        />
+        <Route
+          path="/register"
+          element={user ? <Navigate to="/" /> : <Register />}
+        />
+        <Route
+          path="/home"
+          element={
+            user ? (
+              <Home user={user} getUser={getUser} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route path="*" element={<div>404</div>} />
+      </Routes>
+    </div>
   );
 }
 

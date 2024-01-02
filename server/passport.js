@@ -49,21 +49,32 @@ passport.use(
     },
     async function (accessToken, refreshToken, profile, done) {
       try {
-        // Check if the user already exists in the database
-        const existingUser = await User.findOne({ id: profile.id });
+        const existingUser = await User.findOne({
+          userEmail: profile.emails[0]?.value,
+        });
         if (existingUser) {
+          await User.updateOne(
+            { userEmail: profile.emails[0]?.value },
+            {
+              $set: {
+                userName: profile.username,
+                image: profile.photos[0]?.value,
+              },
+            }
+          );
+          return done(null, profile);
+        } else {
+          // Create a new user and save it to the database
+          const newUser = new User({
+            id: profile.id,
+            image: profile.photos[0].value,
+            userEmail: profile.emails[0].value,
+            userName: profile.username,
+          });
+
+          await newUser.save();
           return done(null, profile);
         }
-
-        // Create a new user and save it to the database
-        const newUser = new User({
-          id: profile.id,
-          image: profile.photos[0].value,
-          userEmail: profile.emails[0].value,
-          userName: profile.username,
-        });
-
-        await newUser.save();
       } catch (er) {
         next(new Error(er));
       }
@@ -82,24 +93,41 @@ passport.use(
       scope: ["profile", "email"],
     },
     async function (accessToken, refreshToken, profile, callback) {
-      try{  // Check if the user already exists in the database
-        const existingUser = await User.findOne({ id: profile.id });
+      try {
+        // Check if the user already exists in the database
+        const existingUser = await User.findOne({
+          userEmail: profile.emails[0]?.value,
+        });
+
         if (existingUser) {
+          // update name image for email which is already logged by oAuth
+          await User.updateOne(
+            { userEmail: profile.emails[0]?.value },
+            {
+              $set: {
+                userName: profile.displayName,
+                image: profile.photos[0]?.value,
+              },
+            }
+          );
           return callback(null, profile);
         }
-  
-        // Create a new user and save it to the database
-        const newUser = new User({
-          id: profile.id,
-          image: profile.photos[0]?.value,
-          userEmail: profile.emails[0]?.value,
-          userName: profile.displayName,
-        });
-        await newUser.save();}
-      catch(er){
-        next(new Error(er))
+        // save if dosenot exist
+        else {
+          // Create a new user and save it to the database
+          const newUser = new User({
+            id: profile.id,
+            image: profile.photos[0]?.value,
+            userEmail: profile.emails[0]?.value,
+            userName: profile.displayName,
+          });
+          await newUser.save();
+          return callback(null, profile);
+        }
+      } catch (er) {
+        next(new Error(er));
       }
-    
+
       return callback(null, profile);
     }
   )

@@ -1,13 +1,14 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import styles from "./styles.module.css";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Axios } from "../../service/axios";
 import { useLocation } from "react-router-dom";
+import { createHMAC } from "../../utility";
 
 function Otp() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { otp, email } = location?.state || {};
+  const { otp, email, optional } = location?.state || {};
 
   const [clickLimitation, seClickLimitation] = useState({
     count: 0,
@@ -20,6 +21,12 @@ function Otp() {
   const inputRef = useRef();
   const passRef = useRef();
 
+  useEffect(() => {
+    if (!location.state) {
+      navigate("/login");
+    }
+  }, []);
+
   const showPass = () => {
     setInputDatas((prev) => ({
       ...prev,
@@ -28,7 +35,6 @@ function Otp() {
   };
 
   const countDown = () => {
-    console.log("calling");
     let timer = setInterval(() => {
       seClickLimitation((prev) => {
         if (prev.seconds === 0 && prev.minutes === 0) {
@@ -53,12 +59,9 @@ function Otp() {
       });
     }, 1000);
   };
-  console.log(
-    clickLimitation.seconds,
-    clickLimitation.minutes,
-    clickLimitation.count
-  );
+
   const logIn = async () => {
+    document.getElementById("button_disable").disabled = true;
     seClickLimitation((prev) => {
       if (prev.count === 3) {
         countDown();
@@ -69,29 +72,41 @@ function Otp() {
       };
     });
 
-    if (otp === Number(inputRef.current.value)) {
-      let result = await Axios(
-        "/userAuth/changepassword",
-        { password: passRef.current.value, email: email },
-        null,
-        null
-      );
-      console.log(result);
-      if (result.response.data.error) {
-        alert(result.response.data.message);
-      } else if (result.message === "Changed Successfully") {
-        alert("Changed Successfully");
-        navigate("/login");
+    if (createHMAC(inputRef.current.value) === otp) {
+      // otp for register
+      if (optional) {
+        optional.type = "RegisterByOtp";
+        let result = await Axios("/userAuth/signup", optional, null, null);
+        document.getElementById("button_disable").disabled = false;
+        if (result.data.error) {
+          alert(result.data.message);
+        } else if (result.data.message === "User Created") {
+          alert(result.data.message);
+          navigate("/login");
+        }
+      }
+      //  otp for forget
+      else {
+        let result = await Axios(
+          "/userAuth/changepassword",
+          { password: passRef.current.value, email: email },
+          null,
+          null
+        );
+        document.getElementById("button_disable").disabled = false;
+
+        if (result?.response?.data.error) {
+          alert(result?.response.data.message);
+        } else if (!result.data.error) {
+          alert("Changed Successfully");
+          navigate("/login");
+        }
       }
     } else {
+      document.getElementById("button_disable").disabled = false;
       alert("OTP Mismatch");
     }
   };
-
-  if (!otp) {
-    navigate("/forgotpassword");
-    return null;
-  }
 
   return (
     <div className={styles.container}>
@@ -106,34 +121,37 @@ function Otp() {
             className={styles.input}
             placeholder="Enter OTP"
           />
-          <div style={{ position: "relative" }}>
-            <input
-              ref={passRef}
-              type={!inputDatas.isVisible ? "text" : "password"}
-              className={styles.input}
-              placeholder="Password"
-            />
-            <img
-              onClick={showPass}
-              src={`./images/${
-                inputDatas.isVisible ? "closed-eye" : "eye"
-              }.png`}
-              style={{
-                height: "25px",
-                width: "25px",
-                cursor: "pointer",
-                position: "absolute",
-                right: "6px",
-                top: "25%",
-              }}
-            />
-          </div>
+          {!optional ? (
+            <div style={{ position: "relative" }}>
+              <input
+                ref={passRef}
+                type={!inputDatas.isVisible ? "text" : "password"}
+                className={styles.input}
+                placeholder="Password"
+              />
+              <img
+                onClick={showPass}
+                src={`./images/${
+                  inputDatas.isVisible ? "closed-eye" : "eye"
+                }.png`}
+                style={{
+                  height: "25px",
+                  width: "25px",
+                  cursor: "pointer",
+                  position: "absolute",
+                  right: "6px",
+                  top: "25%",
+                }}
+              />
+            </div>
+          ) : null}
 
           <button
             className={styles.btn}
             disabled={clickLimitation.count === 4 ? true : false}
             style={{ cursor: clickLimitation.count === 4 ? "wait" : "pointer" }}
             onClick={logIn}
+            id="button_disable"
           >
             Submit
           </button>

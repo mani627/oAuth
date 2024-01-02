@@ -49,7 +49,6 @@ function Login({ getUser }) {
   };
 
   const countDown = () => {
-    console.log("calling");
     let timer = setInterval(() => {
       seClickLimitation((prev) => {
         if (prev.seconds === 0 && prev.minutes === 0) {
@@ -76,7 +75,7 @@ function Login({ getUser }) {
   };
 
   const logIn = async () => {
-    console.log("jnjbn");
+    document.getElementById("button_disable").disabled = true;
     seClickLimitation((prev) => {
       if (prev.count === 3) {
         countDown();
@@ -96,10 +95,8 @@ function Login({ getUser }) {
       null,
       null
     );
-
+    document.getElementById("button_disable").disabled = false;
     if (result?.data?.message === "Successfully LoggedIn") {
-      let expireDate = new Date().getTime() + 24 * 60 * 60 * 1000;
-      result.data.expire = expireDate;
       localStorage.setItem("userDetails", JSON.stringify(result.data));
       getUser();
     } else if (result?.response?.data.error) {
@@ -145,6 +142,7 @@ function Login({ getUser }) {
           </div>
 
           <button
+            id="button_disable"
             className={styles.btn}
             disabled={clickLimitation.count === 4 ? true : false}
             style={{ cursor: clickLimitation.count === 4 ? "wait" : "pointer" }}

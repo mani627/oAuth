@@ -8,22 +8,8 @@ function Home(userDetails) {
   let currentTime = new Date();
 
   let user = {};
-  // useEffect(() => {
-  // if (userDetails?.user) {
+
   user = userDetails.user;
-  // } else {
-  //   let storedData = JSON.parse(localStorage.getItem("userDetails"));
-  //   if (currentTime > storedData?.expire) {
-  //     localStorage.clear();
-  //     navigate("/login");
-  //   } else {
-  //     console.log(storedData);
-  //     user.name = storedData?.details[1];
-  //     user.avatar_url = "https://gravatar.com/avatar/HASH ";
-  //     user.email = storedData?.details[0];
-  //   }
-  // }
-  // }, []);
 
   const logout = () => {
     let storedData = JSON.parse(localStorage.getItem("userDetails"));
