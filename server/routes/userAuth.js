@@ -84,7 +84,7 @@ router.post("/signin", async (req, res, next) => {
                     error: false,
                     message: "Successfully LoggedIn",
                     token: token,
-                    details: [existUser.userEmail, existUser.userName],
+                    details: [existUser.userEmail, existUser.userName,existUser.role],
                     expireDate: expireDate,
                   });
                 }
@@ -142,7 +142,7 @@ router.post("/signup", async (req, res, next) => {
           const composemail = {
             from: "mani8754209@gmail.com",
             to: `${req.body.email}`,
-            subject: "ForgotPassword OTP",
+            subject: "Register OTP",
             html: `<pre>
    Hi,
  
@@ -167,7 +167,6 @@ router.post("/signup", async (req, res, next) => {
                 userName: req.body.username,
                 passWord: pass,
               };
-
               res.status(200).json({
                 error: false,
                 message: createHMAC(random_otp),
@@ -202,6 +201,7 @@ router.post("/signup", async (req, res, next) => {
           userEmail: req.body.userEmail,
           userName: req.body.userName,
           passWord: req.body.passWord,
+          role:"visitor"
         });
         await newUser.save();
 

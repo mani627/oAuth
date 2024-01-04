@@ -4,6 +4,8 @@ const cors = require("cors");
 const passport = require("passport");
 const authRoute = require("./routes/auth");
 const userauthRoute = require("./routes/userAuth");
+const userRole = require("./routes/role");
+const subscription = require("./routes/subscription");
 const cookieSession = require("cookie-session");
 const passportStrategy = require("./passport");
 const bodyparser = require("body-parser");
@@ -37,9 +39,11 @@ app.use(
 
 
 
-
+// routes
 app.use("/auth", authRoute);
 app.use("/userAuth", userauthRoute);
+app.use("/role", userRole);
+app.use("/subscription", subscription);
 
 // Error Handler
 app.use((err, req, res, next) => {

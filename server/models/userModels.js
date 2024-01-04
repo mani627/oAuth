@@ -7,7 +7,10 @@ const userSchema = new mongoose.Schema({
     image: String,
     userEmail: String,
     userName: String,
-    passWord:String
+    passWord:String,
+    role:String,
+    planActivation:{ type: Boolean, default: false },
+    dynamicFields: mongoose.Schema.Types.Mixed,
   });
   
   //   create model

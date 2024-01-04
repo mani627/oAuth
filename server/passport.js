@@ -27,6 +27,7 @@ passport.use(
           image: profile.photos[0]?.value,
           userEmail: profile?.emails?.[0]?.value,
           userName: profile.displayName,
+          role:"visitor"
         });
         await newUser.save();
       } catch (er) {
@@ -70,6 +71,7 @@ passport.use(
             image: profile.photos[0].value,
             userEmail: profile.emails[0].value,
             userName: profile.username,
+            role:"visitor"
           });
 
           await newUser.save();
@@ -120,6 +122,7 @@ passport.use(
             image: profile.photos[0]?.value,
             userEmail: profile.emails[0]?.value,
             userName: profile.displayName,
+            role:"visitor"
           });
           await newUser.save();
           return callback(null, profile);
